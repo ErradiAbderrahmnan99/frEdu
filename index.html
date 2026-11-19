@@ -854,9 +854,14 @@
         <span class="brand-flag">🇲🇦🇫🇷</span>
         <span>frEdu</span>
       </a>
-      <div id="reviewBadge" class="review-badge" onclick="switchTab('review')">
-        <span>🔁</span>
-        <span id="reviewCountText">3ndek 0 kelmat t-raj3hom</span>
+      <div style="display:flex; align-items:center; gap:8px;">
+        <button id="btnNotify20m" class="review-badge" style="background:rgba(56,189,248,0.12); border-color:var(--primary); color:var(--primary);" onclick="toggle20mNotification()" title="Rappel kola 20 min">
+          🔔 <span id="timer20mLabel">Rappel 20 min</span>
+        </button>
+        <div id="reviewBadge" class="review-badge" onclick="switchTab('review')">
+          <span>🔁</span>
+          <span id="reviewCountText">3ndek 0 kelmat t-raj3hom</span>
+        </div>
       </div>
     </div>
 
@@ -2072,6 +2077,70 @@
       if (tabId === 'add') document.getElementById('navTabAdd').classList.add('active');
 
       window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    // 20-Minute Reminder Timer & Web Notification
+    let reminder20mActive = false;
+    let reminder20mInterval = null;
+    let reminder20mSecondsLeft = 20 * 60; // 20 minutes
+
+    async function toggle20mNotification() {
+      const btn = document.getElementById('btnNotify20m');
+      const label = document.getElementById('timer20mLabel');
+
+      if (reminder20mActive) {
+        clearInterval(reminder20mInterval);
+        reminder20mActive = false;
+        reminder20mSecondsLeft = 20 * 60;
+        label.textContent = 'Rappel 20 min';
+        btn.style.background = 'rgba(56, 189, 248, 0.12)';
+        btn.style.borderColor = 'var(--primary)';
+        showToast('T-waqqaf rappel 20 min.');
+        return;
+      }
+
+      if ('Notification' in window && Notification.permission !== 'granted') {
+        try {
+          await Notification.requestPermission();
+        } catch (_) {}
+      }
+
+      reminder20mActive = true;
+      reminder20mSecondsLeft = 20 * 60;
+      btn.style.background = 'rgba(16, 185, 129, 0.2)';
+      btn.style.borderColor = 'var(--success)';
+      showToast('T-actiwa rappel kola 20 min! 🔔');
+
+      const updateTimerDisplay = () => {
+        const mins = Math.floor(reminder20mSecondsLeft / 60);
+        const secs = reminder20mSecondsLeft % 60;
+        label.textContent = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+      };
+
+      updateTimerDisplay();
+
+      reminder20mInterval = setInterval(() => {
+        reminder20mSecondsLeft--;
+        updateTimerDisplay();
+
+        if (reminder20mSecondsLeft <= 0) {
+          trigger20mAlert();
+          reminder20mSecondsLeft = 20 * 60;
+        }
+      }, 1000);
+    }
+
+    function trigger20mAlert() {
+      if ('Notification' in window && Notification.permission === 'granted') {
+        try {
+          new Notification('frEdu — Waqt r-révision! ⏱️', {
+            body: 'Dazet 20 d9i9a! Dkhol t-raj3 l-kelmat dyalek.'
+          });
+        } catch (_) {}
+      }
+
+      showToast('🔔 Dazet 20 d9i9a! Waqt moraja3at l-kelmat.');
+      speakWord('C\'est l\'heure de la révision');
     }
 
     // Register Service Worker for Offline PWA Support

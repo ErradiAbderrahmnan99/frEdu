@@ -70,20 +70,18 @@ Had l-projet fih:
 
 ---
 
-### 7. Kifach t-beddel sa3a dyal l-message
-L-bot kay-khdem kol nhar b GitHub Actions Cron.
-1. 7el l-milaf [daily.yml](file:///.github/workflows/daily.yml).
-2. Ghadi tl9a fih:
-   ```yaml
-   schedule:
-     - cron: '0 8 * * *'
-   ```
-   `0 8 * * *` kat-3ni 08:00 UTC (li hiya 09:00 b waqt l-Meghrib f l-mouchta).
-3. Ila bghiti y-wslek m3a 07:00 UTC (08:00 dyal l-Meghrib), beddelha l:
-   ```yaml
-   - cron: '0 7 * * *'
-   ```
-4. Dir commit w push.
+### 7. Kifach t-beddel l-waqt dyal l-message
+L-bot kay-khdem daba b GitHub Actions Cron kola 20 d9i9a:
+```yaml
+schedule:
+  - cron: '*/20 * * * *'
+```
+Ila bghiti t-beddel l-weqt:
+- **Kola 20 d9i9a**: `*/20 * * * *`
+- **Merra f nhar m3a 09:00 sba7 (08:00 UTC)**: `0 8 * * *`
+- **M3a 21:00 d l-lil (20:00 UTC)**: `0 20 * * *`
+
+Dir ghir commit w push f GitHub.
 
 ---
 
