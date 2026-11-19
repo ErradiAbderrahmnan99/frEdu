@@ -2162,16 +2162,40 @@
     }
 
     function trigger20mAlert() {
+      const deck = getDeck();
+      const today = getTodayString();
+      const dueCards = deck.filter(w => !w.mastered && w.due <= today);
+      const cardsWithExample = deck.filter(w => w.example && w.example.trim());
+
+      let sampleWord = dueCards[0] || cardsWithExample[0] || deck[0];
+
+      let title = 'frEdu — Waqt r-révision! ⏱️';
+      let bodyText = 'Dazet 20 d9i9a! Dkhol t-raj3 l-kelmat dyalek.';
+
+      if (sampleWord) {
+        const darijaPart = sampleWord.darija ? ` ➜ ${sampleWord.darija}` : '';
+        title = `🔁 Révision: ${sampleWord.word}${darijaPart}`;
+        if (sampleWord.example) {
+          bodyText = `📝 Mital: « ${sampleWord.example} »`;
+        }
+      }
+
       if ('Notification' in window && Notification.permission === 'granted') {
         try {
-          new Notification('frEdu — Waqt r-révision! ⏱️', {
-            body: 'Dazet 20 d9i9a! Dkhol t-raj3 l-kelmat dyalek.'
+          new Notification(title, {
+            body: bodyText
           });
         } catch (_) {}
       }
 
-      showToast('🔔 Dazet 20 d9i9a! Waqt moraja3at l-kelmat.');
-      speakWord('C\'est l\'heure de la révision');
+      showToast(`🔔 ${title} | ${bodyText}`);
+      if (sampleWord && sampleWord.example) {
+        speakWord(sampleWord.example);
+      } else if (sampleWord) {
+        speakWord(sampleWord.word);
+      } else {
+        speakWord('C\'est l\'heure de la révision');
+      }
     }
 
     // Register Service Worker for Offline PWA Support

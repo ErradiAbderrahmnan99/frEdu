@@ -197,10 +197,25 @@ def parse_commands(updates, target_chat_id, stories, deck, today_str):
                     if mot and ma3na:
                         norm_m = normalize_text(mot)
                         if norm_m not in deck_norm_words:
+                            ex = ""
+                            matched, found = find_in_glossary(mot, stories)
+                            if found and matched.get("example"):
+                                ex = matched.get("example")
+                            else:
+                                for s in stories:
+                                    if re.search(r'\b' + re.escape(mot) + r'\b', s.get("text", ""), re.IGNORECASE):
+                                        sentences = re.findall(r'[^.!?]+[.!?]+', s.get("text", ""))
+                                        for sent in sentences:
+                                            if re.search(r'\b' + re.escape(mot) + r'\b', sent, re.IGNORECASE):
+                                                ex = sent.strip()
+                                                break
+                                    if ex:
+                                        break
+
                             new_entry = {
                                 "word": mot,
                                 "darija": ma3na,
-                                "example": "",
+                                "example": ex,
                                 "stage": 0,
                                 "due": calculate_due_date(today_str, INTERVALS[0]),
                                 "mastered": False,
@@ -326,7 +341,7 @@ def build_daily_message(
             d_esc = escape_html(item['darija'])
             line = f"• <b>{w_esc}</b> → <tg-spoiler>{d_esc}</tg-spoiler>"
             if item.get("example"):
-                line += f"\n  <i>{escape_html(item['example'])}</i>"
+                line += f"\n  📝 <i>« {escape_html(item['example'])} »</i>"
             review_lines.append(line)
     else:
         review_lines.append("<i>Ma 3ndek 7ta kelma f r-révision lyoum!</i>")
@@ -337,7 +352,10 @@ def build_daily_message(
     if added_words:
         feedback_lines.append("✅ <b>Kelmat tzadou l-deck:</b>")
         for item in added_words:
-            feedback_lines.append(f"• <b>{escape_html(item['word'])}</b>: {escape_html(item['darija'])}")
+            line = f"• <b>{escape_html(item['word'])}</b>: {escape_html(item['darija'])}"
+            if item.get("example"):
+                line += f"\n  📝 <i>« {escape_html(item['example'])} »</i>"
+            feedback_lines.append(line)
 
     if hard_words:
         feedback_lines.append("🔄 <b>Kelmat t-resetaw l-stage 0:</b>")
@@ -365,7 +383,10 @@ def build_daily_message(
                 else:
                     due = item.get("due", "")
                     status = f"Stage {stage} (Due: {due})"
-                list_lines.append(f"• <b>{w_esc}</b> ({d_esc}) — {status}")
+                line = f"• <b>{w_esc}</b> ({d_esc}) — {status}"
+                if item.get("example"):
+                    line += f"\n  📝 <i>« {escape_html(item['example'])} »</i>"
+                list_lines.append(line)
         else:
             list_lines.append("<i>L-deck khawi ma fih walou daba.</i>")
         sections.append("\n".join(list_lines))
