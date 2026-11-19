@@ -588,6 +588,25 @@
       color: var(--text-muted);
     }
 
+    .btn-delete-card {
+      background: rgba(239, 68, 68, 0.12);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      color: #fca5a5;
+      padding: 4px 8px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.85rem;
+      transition: all 0.15s;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .btn-delete-card:hover {
+      background: var(--danger);
+      color: #fff;
+    }
+
     /* Add Word & Backup Form */
     .form-card {
       background: var(--surface-card);
@@ -1060,9 +1079,12 @@
           <input type="text" id="modalExampleInput" class="form-input" placeholder="Exemple de phrase...">
         </div>
       </div>
-      <div class="modal-actions" style="margin-top:14px; display:flex; gap:10px;">
+      <div class="modal-actions" style="margin-top:14px; display:flex; gap:8px;">
         <button class="btn-action" style="flex:1;" onclick="speakModalWord()">
           🔊 Sma3
+        </button>
+        <button id="btnModalDelete" class="btn-action" style="display:none; background:rgba(239, 68, 68, 0.15); border:1px solid var(--danger); color:var(--danger); font-weight:700;" onclick="deleteModalWord()">
+          🗑️ Suprimi
         </button>
         <button id="btnModalAddToReview" class="btn-action" style="flex:2; background:var(--primary); color:#0b1120; border:none; font-weight:700;" onclick="saveModalWordToReview()">
           ➕ Zid l-révision
@@ -1546,15 +1568,18 @@
       const darijaInput = document.getElementById('modalDarijaInput');
       const exampleInput = document.getElementById('modalExampleInput');
       const addBtn = document.getElementById('btnModalAddToReview');
+      const delBtn = document.getElementById('btnModalDelete');
 
       if (existingItem) {
         darijaInput.value = existingItem.darija || '';
         exampleInput.value = existingItem.example || defaultExample || sentenceContext || '';
         addBtn.textContent = '💾 Beddel l-ma3na (Sauvegarder)';
+        if (delBtn) delBtn.style.display = 'inline-flex';
       } else {
         darijaInput.value = defaultDarija || '';
         exampleInput.value = defaultExample || sentenceContext || '';
         addBtn.textContent = '➕ Zid l-révision (Due ghedda)';
+        if (delBtn) delBtn.style.display = 'none';
       }
 
       document.getElementById('wordModal').classList.add('open');
@@ -1576,6 +1601,13 @@
       if (modalCurrentWord.word) {
         speakWord(modalCurrentWord.word);
       }
+    }
+
+    function deleteModalWord() {
+      const word = modalCurrentWord.word;
+      if (!word) return;
+      deleteWordFromDeck(word);
+      closeWordModal();
     }
 
     function saveModalWordToReview() {
@@ -1872,10 +1904,26 @@
             <span class="deck-item-word">${item.word}</span>
             <span class="deck-item-darija">${item.darija ? '(' + item.darija + ')' : ''}</span>
           </div>
-          <span class="deck-item-badge">${status}</span>
+          <div style="display:flex; align-items:center; gap:8px;">
+            <span class="deck-item-badge">${status}</span>
+            <button class="btn-delete-card" onclick="deleteWordFromDeck('${item.word.replace(/'/g, "\\'")}')" title="Suprimi l-kelma">
+              🗑️
+            </button>
+          </div>
         `;
         container.appendChild(div);
       });
+    }
+
+    function deleteWordFromDeck(word) {
+      if (!confirm(`Bghiti t-suprimi l-kelma "${word}" mn l-deck?`)) {
+        return;
+      }
+      let deck = getDeck();
+      deck = deck.filter(w => normalizeText(w.word) !== normalizeText(word));
+      saveDeck(deck);
+      setupReviewTab();
+      showToast(`"${word}" t-suprimat b naja7! 🗑️`);
     }
 
     // Manual Add Word Form
