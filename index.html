@@ -882,6 +882,9 @@
               <input type="range" id="speechSpeed" class="speed-slider" min="0.6" max="1.2" step="0.1" value="1.0" oninput="updateSpeechSpeed(this.value)">
               <span id="speedValue">1.0x</span>
             </div>
+            <span id="voiceEngineBadge" style="font-size:0.75rem; color:var(--primary); background:rgba(56,189,248,0.1); padding:3px 8px; border-radius:6px; border:1px solid rgba(56,189,248,0.25);">
+              🔊 Sawt: Auto
+            </span>
           </div>
           <div style="font-size:0.8rem; color:var(--text-muted);">
             💡 <i>Wrek 3la ay joumla bach t-sma3ha bou7dha, w wrek 3la l-kelmat l-msettrin bach tchouf l-ma3na b Darija.</i>
@@ -1159,36 +1162,69 @@
       }, 2500);
     }
 
-    // Web Speech API Voice Initialization
-    function initSpeechSynthesis() {
-      if (!('speechSynthesis' in window)) return;
+    // Audio Engine: Web Speech API with Seamless Audio Fallback
+    let isUsingFallbackAudio = false;
+    let fallbackAudioPlayer = new Audio();
+    window.activeUtterance = null; // Prevent Chromium garbage collection bug
 
-      const pickVoice = () => {
-        const voices = window.speechSynthesis.getVoices();
-        // Prefer French voice
-        speechVoice = voices.find(v => v.lang === 'fr-FR') ||
-                      voices.find(v => v.lang.startsWith('fr')) ||
-                      null;
+    function initSpeechSynthesis() {
+      const updateEngineStatus = () => {
+        if ('speechSynthesis' in window) {
+          const voices = window.speechSynthesis.getVoices();
+          const frVoice = voices.find(v => v.lang === 'fr-FR' || v.lang.startsWith('fr'));
+          if (frVoice) {
+            speechVoice = frVoice;
+            isUsingFallbackAudio = false;
+          } else if (voices.length === 0) {
+            // Voices not loaded or unavailable on this OS
+            isUsingFallbackAudio = true;
+          } else {
+            // Voices exist but no french voice
+            isUsingFallbackAudio = true;
+          }
+        } else {
+          isUsingFallbackAudio = true;
+        }
+        updateVoiceBadge();
       };
 
-      pickVoice();
-      if (window.speechSynthesis.onvoiceschanged !== undefined) {
-        window.speechSynthesis.onvoiceschanged = pickVoice;
+      updateEngineStatus();
+      if ('speechSynthesis' in window && window.speechSynthesis.onvoiceschanged !== undefined) {
+        window.speechSynthesis.onvoiceschanged = updateEngineStatus;
+      }
+    }
+
+    function updateVoiceBadge() {
+      const badge = document.getElementById('voiceEngineBadge');
+      if (!badge) return;
+      if (!isUsingFallbackAudio && speechVoice) {
+        badge.textContent = `🔊 ${speechVoice.name || 'Web Speech (fr)'}`;
+      } else {
+        badge.textContent = '🔊 Audio HD (français)';
       }
     }
 
     function updateSpeechSpeed(val) {
       speechRate = parseFloat(val);
       document.getElementById('speedValue').textContent = `${speechRate.toFixed(1)}x`;
+      if (fallbackAudioPlayer) {
+        fallbackAudioPlayer.playbackRate = speechRate;
+      }
     }
 
     function stopSpeech() {
+      isPlayingFullStory = false;
       if ('speechSynthesis' in window) {
         window.speechSynthesis.cancel();
       }
-      isPlayingFullStory = false;
+      if (fallbackAudioPlayer) {
+        fallbackAudioPlayer.pause();
+        fallbackAudioPlayer.currentTime = 0;
+      }
+      window.activeUtterance = null;
       clearSentenceHighlights();
-      document.getElementById('btnPlayStory').textContent = '▶️ Sma3 l-9issa kamla';
+      const playBtn = document.getElementById('btnPlayStory');
+      if (playBtn) playBtn.textContent = '▶️ Sma3 l-9issa kamla';
     }
 
     function clearSentenceHighlights() {
@@ -1203,41 +1239,107 @@
       }
     }
 
-    function speakSentence(text, idx, onComplete) {
-      if (!('speechSynthesis' in window)) {
-        showToast('Navigateur dyalek ma fihch s-sawt (Web Speech API)');
-        if (onComplete) onComplete();
+    function playFallbackAudio(text, onStart, onEnd, onError) {
+      if (fallbackAudioPlayer) {
+        fallbackAudioPlayer.pause();
+      }
+
+      // Free, reliable French audio endpoint (Google Translate TTS CDN)
+      const url = `https://translate.google.com/translate_tts?ie=UTF-8&tl=fr&client=tw-ob&q=${encodeURIComponent(text)}`;
+      fallbackAudioPlayer = new Audio(url);
+      fallbackAudioPlayer.playbackRate = speechRate;
+
+      fallbackAudioPlayer.onplay = () => {
+        if (onStart) onStart();
+      };
+
+      fallbackAudioPlayer.onended = () => {
+        if (onEnd) onEnd();
+      };
+
+      fallbackAudioPlayer.onerror = (e) => {
+        console.warn('Fallback audio failed:', e);
+        if (onError) onError(e);
+      };
+
+      fallbackAudioPlayer.play().catch(err => {
+        console.warn('Fallback play catch:', err);
+        if (onError) onError(err);
+      });
+    }
+
+    function speakText(text, onStart, onEnd, onError) {
+      if (!text || !text.trim()) {
+        if (onEnd) onEnd();
         return;
       }
 
-      window.speechSynthesis.cancel();
-      highlightSentence(idx);
+      // If already known that Web Speech has no French voice, go straight to fallback
+      if (isUsingFallbackAudio || !('speechSynthesis' in window)) {
+        playFallbackAudio(text, onStart, onEnd, onError);
+        return;
+      }
 
-      const utterance = new SpeechSynthesisUtterance(text);
-      if (speechVoice) utterance.voice = speechVoice;
-      utterance.lang = 'fr-FR';
-      utterance.rate = speechRate;
+      try {
+        if (window.speechSynthesis.paused) {
+          window.speechSynthesis.resume();
+        }
 
-      utterance.onend = () => {
-        if (onComplete) onComplete();
-      };
+        const utterance = new SpeechSynthesisUtterance(text);
+        window.activeUtterance = utterance; // Keep alive against GC bug
 
-      utterance.onerror = (e) => {
-        console.error('TTS error', e);
-        if (onComplete) onComplete();
-      };
+        if (speechVoice) utterance.voice = speechVoice;
+        utterance.lang = 'fr-FR';
+        utterance.rate = speechRate;
 
-      window.speechSynthesis.speak(utterance);
+        let started = false;
+
+        utterance.onstart = () => {
+          started = true;
+          if (onStart) onStart();
+        };
+
+        utterance.onend = () => {
+          window.activeUtterance = null;
+          if (onEnd) onEnd();
+        };
+
+        utterance.onerror = (e) => {
+          console.warn('Web Speech API error:', e.error);
+          window.activeUtterance = null;
+
+          // If speech synthesis failed or language unavailable, switch immediately to Audio HD
+          if (!started || e.error === 'language-unavailable' || e.error === 'synthesis-failed' || e.error === 'not-allowed') {
+            isUsingFallbackAudio = true;
+            updateVoiceBadge();
+            playFallbackAudio(text, onStart, onEnd, onError);
+          } else {
+            if (onError) onError(e);
+          }
+        };
+
+        window.speechSynthesis.speak(utterance);
+      } catch (err) {
+        console.warn('SpeechSynthesis invocation error:', err);
+        isUsingFallbackAudio = true;
+        updateVoiceBadge();
+        playFallbackAudio(text, onStart, onEnd, onError);
+      }
+    }
+
+    function speakSentence(text, idx) {
+      stopSpeech();
+      speakText(
+        text,
+        () => highlightSentence(idx),
+        () => clearSentenceHighlights(),
+        () => clearSentenceHighlights()
+      );
     }
 
     function speakWord(word) {
-      if (!('speechSynthesis' in window)) return;
-      window.speechSynthesis.cancel();
-      const u = new SpeechSynthesisUtterance(word);
-      if (speechVoice) u.voice = speechVoice;
-      u.lang = 'fr-FR';
-      u.rate = speechRate;
-      window.speechSynthesis.speak(u);
+      stopSpeech();
+      speakText(word, null, null, null);
     }
 
     function togglePlayStory() {
@@ -1266,13 +1368,27 @@
       const span = sentenceSpans[currentSentenceIdx];
       const text = span.getAttribute('data-text');
 
-      speakSentence(text, currentSentenceIdx, () => {
-        if (isPlayingFullStory) {
-          currentSentenceIdx++;
-          // Small pause between sentences
-          setTimeout(playNextSentenceInStory, 250);
+      speakText(
+        text,
+        // onStart
+        () => {
+          highlightSentence(currentSentenceIdx);
+        },
+        // onEnd
+        () => {
+          if (isPlayingFullStory) {
+            currentSentenceIdx++;
+            // Small pause between sentences (400ms)
+            setTimeout(playNextSentenceInStory, 400);
+          }
+        },
+        // onError
+        (err) => {
+          console.warn('Sentence reading error:', err);
+          stopSpeech();
+          showToast('T-waqqaf s-sawt. Wrek 3la play bach t-3awed.');
         }
-      });
+      );
     }
 
     // Story Loading and Rendering
@@ -1831,3 +1947,4 @@
   </script>
 </body>
 </html>
+
