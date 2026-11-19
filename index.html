@@ -1038,18 +1038,33 @@
   <div id="wordModal" class="modal-backdrop" onclick="closeWordModal(event)">
     <div class="modal-content" onclick="event.stopPropagation()">
       <div class="modal-header">
-        <h3 id="modalWord" class="modal-title">Mot</h3>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <h3 id="modalWord" class="modal-title" style="margin:0;">Mot</h3>
+          <button class="btn-action" style="padding:4px 8px; font-size:0.9rem;" onclick="speakModalWord()" title="Sma3 n-not9">
+            🔊
+          </button>
+        </div>
         <button class="modal-close" onclick="closeWordModal()">✕</button>
       </div>
-      <div class="modal-body">
-        <div id="modalDarija" class="modal-darija">L-ma3na</div>
-        <div id="modalExample" class="modal-example">Exemple de phrase...</div>
+      <div class="modal-body" style="display:flex; flex-direction:column; gap:12px; margin-bottom:16px;">
+        <div class="form-group" style="margin:0;">
+          <label for="modalDarijaInput" style="font-size:0.85rem; color:var(--text-muted); font-weight:600; margin-bottom:6px; display:block;">
+            ✍️ L-ma3na b Darija (Arabizi):
+          </label>
+          <input type="text" id="modalDarijaInput" class="form-input" placeholder="Kteb l-ma3na b Darija hna (mital: nhar)...">
+        </div>
+        <div class="form-group" style="margin:0;">
+          <label for="modalExampleInput" style="font-size:0.85rem; color:var(--text-muted); font-weight:600; margin-bottom:6px; display:block;">
+            📝 Mital (Phrase d'exemple):
+          </label>
+          <input type="text" id="modalExampleInput" class="form-input" placeholder="Exemple de phrase...">
+        </div>
       </div>
-      <div class="modal-actions">
-        <button class="btn-action" onclick="speakModalWord()">
+      <div class="modal-actions" style="margin-top:14px; display:flex; gap:10px;">
+        <button class="btn-action" style="flex:1;" onclick="speakModalWord()">
           🔊 Sma3
         </button>
-        <button id="btnModalAddToReview" class="btn-action" style="background:var(--primary); color:#0b1120; border:none;" onclick="addModalWordToReview()">
+        <button id="btnModalAddToReview" class="btn-action" style="flex:2; background:var(--primary); color:#0b1120; border:none; font-weight:700;" onclick="saveModalWordToReview()">
           ➕ Zid l-révision
         </button>
       </div>
@@ -1489,17 +1504,17 @@
             gSpan.textContent = chunk;
             gSpan.onclick = (e) => {
               e.stopPropagation();
-              openWordModal(glossaryItem.word, glossaryItem.darija, glossaryItem.example);
+              openWordModal(glossaryItem.word, glossaryItem.darija, glossaryItem.example, sentTrim);
             };
             sentSpan.appendChild(gSpan);
           } else if (chunk.trim().length > 1 && /^[a-zA-ZÀ-ÿ'’-]+$/.test(chunk.trim())) {
-            // Normal word: clickable to inspect or add
+            // Normal word: clickable to inspect or add custom meaning
             const wSpan = document.createElement('span');
             wSpan.textContent = chunk;
             wSpan.style.cursor = 'pointer';
             wSpan.onclick = (e) => {
               e.stopPropagation();
-              openWordModal(chunk.trim(), 'Ma kaynach f l-glossaire', '');
+              openWordModal(chunk.trim(), '', sentTrim, sentTrim);
             };
             sentSpan.appendChild(wSpan);
           } else {
@@ -1518,28 +1533,37 @@
       });
     }
 
-    // Modal Word Popup
-    let modalCurrentWord = { word: '', darija: '', example: '' };
+    // Modal Word Popup & Inline Editor
+    let modalCurrentWord = { word: '' };
 
-    function openWordModal(word, darija, example) {
-      modalCurrentWord = { word, darija, example };
+    function openWordModal(word, defaultDarija, defaultExample, sentenceContext) {
+      modalCurrentWord = { word };
       document.getElementById('modalWord').textContent = word;
-      document.getElementById('modalDarija').textContent = darija || 'Ma kaynach f l-glossaire';
-      document.getElementById('modalExample').textContent = example ? `« ${example} »` : 'Ma kynche mital';
 
-      // Check if already in deck
       const deck = getDeck();
-      const inDeck = deck.some(i => normalizeText(i.word) === normalizeText(word));
+      const existingItem = deck.find(i => normalizeText(i.word) === normalizeText(word));
+
+      const darijaInput = document.getElementById('modalDarijaInput');
+      const exampleInput = document.getElementById('modalExampleInput');
       const addBtn = document.getElementById('btnModalAddToReview');
-      if (inDeck) {
-        addBtn.textContent = '✅ Mwejoda f r-révision';
-        addBtn.disabled = true;
+
+      if (existingItem) {
+        darijaInput.value = existingItem.darija || '';
+        exampleInput.value = existingItem.example || defaultExample || sentenceContext || '';
+        addBtn.textContent = '💾 Beddel l-ma3na (Sauvegarder)';
       } else {
-        addBtn.textContent = '➕ Zid l-révision';
-        addBtn.disabled = false;
+        darijaInput.value = defaultDarija || '';
+        exampleInput.value = defaultExample || sentenceContext || '';
+        addBtn.textContent = '➕ Zid l-révision (Due ghedda)';
       }
 
       document.getElementById('wordModal').classList.add('open');
+      setTimeout(() => {
+        darijaInput.focus();
+        if (darijaInput.value) {
+          darijaInput.select();
+        }
+      }, 100);
     }
 
     function closeWordModal(e) {
@@ -1554,22 +1578,43 @@
       }
     }
 
-    function addModalWordToReview() {
-      if (!modalCurrentWord.word) return;
+    function saveModalWordToReview() {
+      const word = modalCurrentWord.word;
+      if (!word) return;
+
+      const darijaInput = document.getElementById('modalDarijaInput');
+      const exampleInput = document.getElementById('modalExampleInput');
+
+      const darijaVal = darijaInput.value.trim();
+      const exampleVal = exampleInput.value.trim();
+
+      if (!darijaVal) {
+        showToast('3afak kteb l-ma3na b Darija 9bel ma t-zido!');
+        darijaInput.focus();
+        return;
+      }
 
       const deck = getDeck();
-      if (!deck.some(i => normalizeText(i.word) === normalizeText(modalCurrentWord.word))) {
+      const existingIdx = deck.findIndex(i => normalizeText(i.word) === normalizeText(word));
+
+      if (existingIdx >= 0) {
+        deck[existingIdx].darija = darijaVal;
+        deck[existingIdx].example = exampleVal;
+        saveDeck(deck);
+        showToast(`L-ma3na dyal "${word}" t-beddel b naja7! 💾`);
+      } else {
         deck.push({
-          word: modalCurrentWord.word,
-          darija: modalCurrentWord.darija !== 'Ma kaynach f l-glossaire' ? modalCurrentWord.darija : '',
-          example: modalCurrentWord.example,
+          word: word,
+          darija: darijaVal,
+          example: exampleVal,
           stage: 0,
           due: addDaysToDate(getTodayString(), INTERVALS[0]),
           mastered: false
         });
         saveDeck(deck);
-        showToast(`"${modalCurrentWord.word}" tzadte l-révision! (Due ghedda)`);
+        showToast(`"${word}" tzadte l-révision! (Due ghedda) ✅`);
       }
+
       closeWordModal();
     }
 
