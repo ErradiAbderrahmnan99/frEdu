@@ -1,0 +1,1833 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>frEdu — Ta3allom l-Fransiya b Darija</title>
+  <meta name="description" content="Système gratuit w serverless bach t-t3ellem l-français b Darija (A2 -> B1).">
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#0f172a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <style>
+    :root {
+      --bg: #0b1120;
+      --surface: #1e293b;
+      --surface-card: #182234;
+      --surface-border: #334155;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --primary: #38bdf8;
+      --primary-hover: #0ea5e9;
+      --accent: #f59e0b;
+      --success: #10b981;
+      --danger: #ef4444;
+      --underline-glossary: #f43f5e;
+      --highlight-sentence: rgba(56, 189, 248, 0.22);
+      --font-stack: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      font-family: var(--font-stack);
+      background-color: var(--bg);
+      color: var(--text-main);
+      line-height: 1.6;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      padding-bottom: 80px;
+    }
+
+    /* Header */
+    header {
+      background-color: var(--surface);
+      border-bottom: 1px solid var(--surface-border);
+      padding: 14px 18px;
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .header-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 1.35rem;
+      font-weight: 800;
+      color: var(--primary);
+      text-decoration: none;
+    }
+
+    .brand-flag {
+      font-size: 1.5rem;
+    }
+
+    .review-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background-color: rgba(245, 158, 11, 0.15);
+      border: 1px solid var(--accent);
+      color: var(--accent);
+      padding: 5px 12px;
+      border-radius: 9999px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .review-badge:hover {
+      background-color: rgba(245, 158, 11, 0.25);
+    }
+
+    /* Day Navigation Bar */
+    .day-nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      background: var(--bg);
+      border: 1px solid var(--surface-border);
+      border-radius: 12px;
+      padding: 6px 10px;
+    }
+
+    .nav-btn {
+      background: var(--surface);
+      color: var(--text-main);
+      border: 1px solid var(--surface-border);
+      padding: 6px 12px;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      transition: background 0.15s;
+    }
+
+    .nav-btn:hover:not(:disabled) {
+      background: var(--surface-border);
+    }
+
+    .nav-btn:disabled {
+      opacity: 0.35;
+      cursor: not-allowed;
+    }
+
+    .current-day-label {
+      font-weight: 700;
+      font-size: 0.95rem;
+      color: var(--text-main);
+      text-align: center;
+      cursor: pointer;
+      padding: 4px 8px;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .current-day-label:hover {
+      background: var(--surface);
+    }
+
+    /* Main Container */
+    main {
+      flex: 1;
+      max-width: 760px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 16px;
+    }
+
+    /* Tabs Content */
+    .tab-panel {
+      display: none;
+      animation: fadeIn 0.2s ease-in-out;
+    }
+
+    .tab-panel.active {
+      display: block;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Story Card */
+    .story-card {
+      background-color: var(--surface-card);
+      border: 1px solid var(--surface-border);
+      border-radius: 16px;
+      padding: 20px;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.25);
+    }
+
+    .story-meta {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+
+    .story-topic {
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      padding: 4px 10px;
+      border-radius: 6px;
+      background: rgba(56, 189, 248, 0.12);
+      color: var(--primary);
+      border: 1px solid rgba(56, 189, 248, 0.25);
+    }
+
+    .story-title {
+      font-size: 1.4rem;
+      font-weight: 800;
+      color: var(--text-main);
+      margin-bottom: 16px;
+      line-height: 1.3;
+    }
+
+    /* Audio Controls */
+    .audio-bar {
+      background: var(--surface);
+      border: 1px solid var(--surface-border);
+      border-radius: 12px;
+      padding: 12px 16px;
+      margin-bottom: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .audio-controls-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .audio-btn {
+      background: var(--primary);
+      color: #0b1120;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 10px;
+      font-size: 0.95rem;
+      font-weight: 700;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: background 0.15s;
+    }
+
+    .audio-btn:hover {
+      background: var(--primary-hover);
+    }
+
+    .audio-btn-secondary {
+      background: var(--surface-border);
+      color: var(--text-main);
+    }
+
+    .audio-btn-secondary:hover {
+      background: #475569;
+    }
+
+    .speed-container {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+
+    .speed-slider {
+      width: 90px;
+      accent-color: var(--primary);
+    }
+
+    /* Story Text */
+    .story-text {
+      font-size: 1.15rem;
+      line-height: 1.85;
+      color: #e2e8f0;
+      letter-spacing: 0.01em;
+    }
+
+    .sentence {
+      border-radius: 4px;
+      padding: 2px 3px;
+      transition: background-color 0.2s;
+      cursor: pointer;
+    }
+
+    .sentence:hover {
+      background-color: rgba(255, 255, 255, 0.05);
+    }
+
+    .sentence.active-speaking {
+      background-color: var(--highlight-sentence);
+      outline: 1px solid rgba(56, 189, 248, 0.4);
+    }
+
+    /* Underlined glossary words */
+    .glossary-word {
+      text-decoration: underline;
+      text-decoration-color: var(--underline-glossary);
+      text-decoration-thickness: 2.5px;
+      text-underline-offset: 4px;
+      font-weight: 600;
+      color: #fff;
+      cursor: pointer;
+      padding: 0 1px;
+      border-radius: 3px;
+      transition: background 0.15s;
+    }
+
+    .glossary-word:hover {
+      background: rgba(244, 63, 94, 0.18);
+    }
+
+    /* Shadowing Tab */
+    .shadowing-intro {
+      background: var(--surface);
+      border: 1px solid var(--surface-border);
+      border-radius: 12px;
+      padding: 14px;
+      margin-bottom: 16px;
+      font-size: 0.95rem;
+      color: var(--text-muted);
+    }
+
+    .shadowing-intro strong {
+      color: var(--text-main);
+    }
+
+    .shadowing-item {
+      background: var(--surface-card);
+      border: 1px solid var(--surface-border);
+      border-radius: 14px;
+      padding: 16px;
+      margin-bottom: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .shadowing-num {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--accent);
+      text-transform: uppercase;
+    }
+
+    .shadowing-sentence {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: var(--text-main);
+      line-height: 1.5;
+    }
+
+    .shadowing-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .btn-action {
+      background: var(--surface);
+      border: 1px solid var(--surface-border);
+      color: var(--text-main);
+      padding: 7px 12px;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      transition: all 0.15s;
+    }
+
+    .btn-action:hover {
+      background: var(--surface-border);
+    }
+
+    .btn-record {
+      border-color: rgba(239, 68, 68, 0.4);
+      color: #fca5a5;
+    }
+
+    .btn-record.recording {
+      background: var(--danger);
+      color: #fff;
+      animation: pulse 1.2s infinite;
+    }
+
+    @keyframes pulse {
+      0% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.85; transform: scale(0.97); }
+      100% { opacity: 1; transform: scale(1); }
+    }
+
+    .recording-status {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    /* Review Tab (Flashcards) */
+    .review-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .flashcard {
+      width: 100%;
+      min-height: 240px;
+      perspective: 1000px;
+      cursor: pointer;
+    }
+
+    .flashcard-inner {
+      position: relative;
+      width: 100%;
+      min-height: 240px;
+      text-align: center;
+      transition: transform 0.5s;
+      transform-style: preserve-3d;
+      border-radius: 16px;
+    }
+
+    .flashcard.flipped .flashcard-inner {
+      transform: rotateY(180deg);
+    }
+
+    .flashcard-front, .flashcard-back {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      -webkit-backface-visibility: hidden;
+      backface-visibility: hidden;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      border-radius: 16px;
+      border: 1px solid var(--surface-border);
+      box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+    }
+
+    .flashcard-front {
+      background: linear-gradient(145deg, #1e293b, #0f172a);
+    }
+
+    .flashcard-back {
+      background: linear-gradient(145deg, #1e293b, #172554);
+      transform: rotateY(180deg);
+      border-color: rgba(56, 189, 248, 0.4);
+    }
+
+    .card-word {
+      font-size: 1.8rem;
+      font-weight: 800;
+      color: var(--text-main);
+      margin-bottom: 10px;
+    }
+
+    .card-hint {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+
+    .card-darija {
+      font-size: 1.6rem;
+      font-weight: 800;
+      color: var(--primary);
+      margin-bottom: 8px;
+    }
+
+    .card-example {
+      font-size: 1rem;
+      color: #cbd5e1;
+      font-style: italic;
+      margin-top: 10px;
+      line-height: 1.4;
+    }
+
+    .card-stage-badge {
+      position: absolute;
+      top: 12px;
+      right: 14px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 6px;
+      background: rgba(255, 255, 255, 0.1);
+      color: var(--text-muted);
+    }
+
+    .review-actions {
+      display: flex;
+      gap: 14px;
+      width: 100%;
+    }
+
+    .btn-review {
+      flex: 1;
+      padding: 14px;
+      border-radius: 12px;
+      border: none;
+      font-size: 1.05rem;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: transform 0.1s, opacity 0.15s;
+    }
+
+    .btn-review:active {
+      transform: scale(0.98);
+    }
+
+    .btn-fail {
+      background: var(--danger);
+      color: #fff;
+    }
+
+    .btn-pass {
+      background: var(--success);
+      color: #fff;
+    }
+
+    .deck-stats {
+      width: 100%;
+      background: var(--surface);
+      border: 1px solid var(--surface-border);
+      border-radius: 12px;
+      padding: 16px;
+      margin-top: 10px;
+    }
+
+    .deck-stats h3 {
+      font-size: 1rem;
+      font-weight: 700;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .deck-list {
+      max-height: 260px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .deck-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 12px;
+      background: var(--surface-card);
+      border: 1px solid var(--surface-border);
+      border-radius: 8px;
+      font-size: 0.9rem;
+    }
+
+    .deck-item-word {
+      font-weight: 700;
+      color: var(--text-main);
+    }
+
+    .deck-item-darija {
+      color: var(--primary);
+      margin-left: 6px;
+    }
+
+    .deck-item-badge {
+      font-size: 0.75rem;
+      padding: 2px 6px;
+      border-radius: 4px;
+      background: var(--surface-border);
+      color: var(--text-muted);
+    }
+
+    /* Add Word & Backup Form */
+    .form-card {
+      background: var(--surface-card);
+      border: 1px solid var(--surface-border);
+      border-radius: 16px;
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+
+    .form-card h2 {
+      font-size: 1.25rem;
+      font-weight: 700;
+      margin-bottom: 14px;
+      color: var(--text-main);
+    }
+
+    .form-group {
+      margin-bottom: 14px;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+    }
+
+    .form-input {
+      width: 100%;
+      background: var(--bg);
+      border: 1px solid var(--surface-border);
+      border-radius: 8px;
+      padding: 10px 14px;
+      color: var(--text-main);
+      font-size: 1rem;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+
+    .form-input:focus {
+      border-color: var(--primary);
+    }
+
+    .backup-buttons {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    /* Bottom Navigation */
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: var(--surface);
+      border-top: 1px solid var(--surface-border);
+      display: flex;
+      justify-content: space-around;
+      padding: 8px 6px;
+      z-index: 40;
+    }
+
+    .bottom-tab {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-size: 0.75rem;
+      font-weight: 600;
+      cursor: pointer;
+      padding: 6px 12px;
+      border-radius: 8px;
+      transition: color 0.15s;
+    }
+
+    .bottom-tab.active {
+      color: var(--primary);
+    }
+
+    .bottom-tab-icon {
+      font-size: 1.25rem;
+    }
+
+    /* Modal / Popups */
+    .modal-backdrop {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(4px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      z-index: 100;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease;
+    }
+
+    .modal-backdrop.open {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .modal-content {
+      background: var(--surface);
+      border: 1px solid var(--surface-border);
+      border-radius: 20px;
+      padding: 24px;
+      width: 100%;
+      max-width: 440px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+      transform: translateY(10px);
+      transition: transform 0.2s ease;
+    }
+
+    .modal-backdrop.open .modal-content {
+      transform: translateY(0);
+    }
+
+    .modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 14px;
+    }
+
+    .modal-title {
+      font-size: 1.35rem;
+      font-weight: 800;
+      color: var(--primary);
+    }
+
+    .modal-close {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-size: 1.4rem;
+      cursor: pointer;
+      padding: 4px;
+    }
+
+    .modal-body {
+      margin-bottom: 20px;
+    }
+
+    .modal-darija {
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: var(--text-main);
+      margin-bottom: 8px;
+    }
+
+    .modal-example {
+      font-size: 0.95rem;
+      color: var(--text-muted);
+      font-style: italic;
+      background: var(--bg);
+      padding: 10px;
+      border-radius: 8px;
+      border-left: 3px solid var(--primary);
+    }
+
+    .modal-actions {
+      display: flex;
+      gap: 10px;
+    }
+
+    /* Stories List Modal */
+    .stories-list {
+      max-height: 60vh;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .story-list-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px;
+      background: var(--surface-card);
+      border: 1px solid var(--surface-border);
+      border-radius: 10px;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+
+    .story-list-item:hover {
+      background: var(--surface-border);
+    }
+
+    .story-list-item.active-item {
+      border-color: var(--primary);
+      background: rgba(56, 189, 248, 0.1);
+    }
+
+    /* Toast Notification */
+    .toast {
+      position: fixed;
+      bottom: 90px;
+      left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background: var(--surface);
+      color: var(--text-main);
+      border: 1px solid var(--surface-border);
+      padding: 10px 18px;
+      border-radius: 9999px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+      z-index: 200;
+      opacity: 0;
+      pointer-events: none;
+      transition: all 0.25s ease;
+      white-space: nowrap;
+    }
+
+    .toast.show {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
+    }
+
+    /* Audio Element hidden */
+    audio {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <header>
+    <div class="header-top">
+      <a href="?day=1" class="brand">
+        <span class="brand-flag">🇲🇦🇫🇷</span>
+        <span>frEdu</span>
+      </a>
+      <div id="reviewBadge" class="review-badge" onclick="switchTab('review')">
+        <span>🔁</span>
+        <span id="reviewCountText">3ndek 0 kelmat t-raj3hom</span>
+      </div>
+    </div>
+
+    <!-- Day Navigation -->
+    <div class="day-nav">
+      <button id="btnPrevDay" class="nav-btn" onclick="changeDay(-1)">
+        ◀ Sabi9a
+      </button>
+      <div id="currentDayBtn" class="current-day-label" onclick="openStoriesModal()">
+        <span id="dayLabel">9issa 1 / 30</span>
+        <span>▼</span>
+      </div>
+      <button id="btnNextDay" class="nav-btn" onclick="changeDay(1)">
+        Mowaliya ▶
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Content Container -->
+  <main>
+
+    <!-- Tab 1: Story -->
+    <section id="tab-story" class="tab-panel active">
+      <div class="story-card">
+        <div class="story-meta">
+          <span id="storyTopic" class="story-topic">VIE QUOTIDIENNE</span>
+          <span id="storyIdBadge" style="font-size:0.8rem; color:var(--text-muted); font-weight:600;">#1</span>
+        </div>
+        <h1 id="storyTitle" class="story-title">Titre de l'histoire</h1>
+
+        <!-- Audio Player Bar -->
+        <div class="audio-bar">
+          <div class="audio-controls-row">
+            <button id="btnPlayStory" class="audio-btn" onclick="togglePlayStory()">
+              ▶️ Sma3 l-9issa kamla
+            </button>
+            <button class="audio-btn audio-btn-secondary" onclick="stopSpeech()">
+              ⏹️ 7bes
+            </button>
+            <div class="speed-container">
+              <span>Sor3a:</span>
+              <input type="range" id="speechSpeed" class="speed-slider" min="0.6" max="1.2" step="0.1" value="1.0" oninput="updateSpeechSpeed(this.value)">
+              <span id="speedValue">1.0x</span>
+            </div>
+          </div>
+          <div style="font-size:0.8rem; color:var(--text-muted);">
+            💡 <i>Wrek 3la ay joumla bach t-sma3ha bou7dha, w wrek 3la l-kelmat l-msettrin bach tchouf l-ma3na b Darija.</i>
+          </div>
+        </div>
+
+        <!-- Story Text with clickable/interactive words -->
+        <div id="storyTextContainer" class="story-text">
+          Chargement de l'histoire...
+        </div>
+      </div>
+    </section>
+
+    <!-- Tab 2: Shadowing -->
+    <section id="tab-shadowing" class="tab-panel">
+      <div class="shadowing-intro">
+        <strong>🎙️ Tariqat Shadowing (Sma3 w 3awed):</strong><br>
+        1. Wrek 3la <b>"🔊 Sma3 l-aṣli"</b> w tṣennat mezyan l-not9.<br>
+        2. Wrek 3la <b>"🎙️ Sjel sawtek"</b> w 3awed nfs l-joumla.<br>
+        3. Wrek 3la <b>"▶️ Tṣennat l-tsjil"</b> w 9aren not9ek m3a l-aṣli.
+      </div>
+
+      <div id="shadowingContainer">
+        <!-- 5 Shadowing sentences injected dynamically -->
+      </div>
+    </section>
+
+    <!-- Tab 3: Spaced Repetition Review (Moraja3a) -->
+    <section id="tab-review" class="tab-panel">
+      <div class="review-container">
+        <!-- Card review view -->
+        <div id="cardReviewView" style="width: 100%;">
+          <div id="flashcardBox" class="flashcard" onclick="flipCard()">
+            <div class="flashcard-inner">
+              <div class="flashcard-front">
+                <span id="cardStageFront" class="card-stage-badge">Stage 0</span>
+                <div id="cardWordFront" class="card-word">Mot</div>
+                <div class="card-hint">👆 Wrek hna bach t-9leb l-wer9a</div>
+              </div>
+              <div class="flashcard-back">
+                <span id="cardStageBack" class="card-stage-badge">Stage 0</span>
+                <div id="cardDarijaBack" class="card-darija">L-ma3na</div>
+                <div id="cardExampleBack" class="card-example">Exemple de phrase...</div>
+                <button class="btn-action" style="margin-top:12px;" onclick="event.stopPropagation(); speakWord(currentReviewWord.word)">
+                  🔊 Sma3 n-not9
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="review-actions" style="margin-top:16px;">
+            <button class="btn-review btn-fail" onclick="handleCardAnswer(false)">
+              ❌ Ma3reftaach (Stage 0)
+            </button>
+            <button class="btn-review btn-pass" onclick="handleCardAnswer(true)">
+              ✅ 3reftha (Zid l-9dam)
+            </button>
+          </div>
+        </div>
+
+        <!-- Empty deck state -->
+        <div id="emptyReviewView" class="form-card" style="display:none; text-align:center; width: 100%;">
+          <div style="font-size:3rem; margin-bottom:10px;">🎉</div>
+          <h2>Bravo! Kmmlti moraja3at lyoum!</h2>
+          <p style="color:var(--text-muted); margin-bottom:16px;">
+            Ma b9at 3ndek 7ta kelma due lyoum. Zid 9ra l-9isas w 3zzel kelmat jdad t-zidhom l-deck.
+          </p>
+          <button class="audio-btn" onclick="switchTab('story')">
+            📖 Rje3 l-l9issa
+          </button>
+        </div>
+
+        <!-- Deck Statistics & List -->
+        <div class="deck-stats">
+          <h3>
+            <span>📚 L-Deck dyalek</span>
+            <span id="totalDeckCount" style="font-size:0.85rem; color:var(--text-muted);">0 kelmat</span>
+          </h3>
+          <div id="deckList" class="deck-list">
+            <!-- List of all deck items -->
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Tab 4: Add Words & Backup -->
+    <section id="tab-add" class="tab-panel">
+      <!-- Add Word Form -->
+      <div class="form-card">
+        <h2>➕ Zid kelma jdida l-révision</h2>
+        <form id="addWordForm" onsubmit="handleManualAddWord(event)">
+          <div class="form-group">
+            <label for="inputFrenchWord">Kelma b l-Français (obligatoire):</label>
+            <input type="text" id="inputFrenchWord" class="form-input" placeholder="Ex: embouteillage" required>
+          </div>
+          <div class="form-group">
+            <label for="inputDarijaMeaning">L-ma3na b Darija (obligatoire):</label>
+            <input type="text" id="inputDarijaMeaning" class="form-input" placeholder="Ex: zahma dyal t-tomobillat" required>
+          </div>
+          <div class="form-group">
+            <label for="inputExample">Mital b l-Français (facultatif):</label>
+            <input type="text" id="inputExample" class="form-input" placeholder="Ex: Il y a des embouteillages ce matin.">
+          </div>
+          <button type="submit" class="audio-btn" style="width:100%; justify-content:center;">
+            ➕ Zid l-révision (Due ghedda)
+          </button>
+        </form>
+      </div>
+
+      <!-- Backup & Restore -->
+      <div class="form-card">
+        <h2>💾 Sauvegarde w Restauration</h2>
+        <p style="color:var(--text-muted); font-size:0.9rem; margin-bottom:14px;">
+          Telechargi l-khezin dyal l-kelmat bach ma ydi3och lik ila beddelti l-navigateur aw t-telefoun.
+        </p>
+        <div class="backup-buttons">
+          <button class="btn-action" onclick="exportDataBackup()">
+            💾 Sauvegarder (Télécharger JSON)
+          </button>
+          <button class="btn-action" onclick="document.getElementById('fileRestoreInput').click()">
+            📥 Restaurer (Import JSON)
+          </button>
+          <input type="file" id="fileRestoreInput" accept=".json" style="display:none;" onchange="importDataBackup(event)">
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Bottom Navigation Bar -->
+  <nav class="bottom-nav">
+    <button id="navTabStory" class="bottom-tab active" onclick="switchTab('story')">
+      <span class="bottom-tab-icon">📖</span>
+      <span>9issa</span>
+    </button>
+    <button id="navTabShadowing" class="bottom-tab" onclick="switchTab('shadowing')">
+      <span class="bottom-tab-icon">🎙️</span>
+      <span>Shadowing</span>
+    </button>
+    <button id="navTabReview" class="bottom-tab" onclick="switchTab('review')">
+      <span class="bottom-tab-icon">🔁</span>
+      <span>Moraja3a</span>
+    </button>
+    <button id="navTabAdd" class="bottom-tab" onclick="switchTab('add')">
+      <span class="bottom-tab-icon">⚙️</span>
+      <span>Kheyarat</span>
+    </button>
+  </nav>
+
+  <!-- Word Popup Modal -->
+  <div id="wordModal" class="modal-backdrop" onclick="closeWordModal(event)">
+    <div class="modal-content" onclick="event.stopPropagation()">
+      <div class="modal-header">
+        <h3 id="modalWord" class="modal-title">Mot</h3>
+        <button class="modal-close" onclick="closeWordModal()">✕</button>
+      </div>
+      <div class="modal-body">
+        <div id="modalDarija" class="modal-darija">L-ma3na</div>
+        <div id="modalExample" class="modal-example">Exemple de phrase...</div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn-action" onclick="speakModalWord()">
+          🔊 Sma3
+        </button>
+        <button id="btnModalAddToReview" class="btn-action" style="background:var(--primary); color:#0b1120; border:none;" onclick="addModalWordToReview()">
+          ➕ Zid l-révision
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- All Stories Modal -->
+  <div id="storiesModal" class="modal-backdrop" onclick="closeStoriesModal(event)">
+    <div class="modal-content" onclick="event.stopPropagation()">
+      <div class="modal-header">
+        <h3 class="modal-title">📚 Ga3 l-9isas (1 - 30)</h3>
+        <button class="modal-close" onclick="closeStoriesModal()">✕</button>
+      </div>
+      <div id="storiesListContainer" class="stories-list">
+        <!-- List of stories generated dynamically -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Element -->
+  <div id="toast" class="toast">Message</div>
+
+  <!-- Audio playback element for recorded voice -->
+  <audio id="recordedAudioPlayer"></audio>
+
+  <script>
+    /* =========================================================
+       frEdu Web Application - Vanilla JS
+       ========================================================= */
+
+    // Spaced repetition intervals in days
+    const INTERVALS = [1, 3, 7, 14, 30];
+
+    // State
+    let stories = [];
+    let currentStory = null;
+    let currentDay = 1;
+    let speechVoice = null;
+    let speechRate = 1.0;
+    let isPlayingFullStory = false;
+    let currentSentenceIdx = -1;
+    let sentenceSpans = [];
+
+    // Local Storage Deck Management (safe helpers)
+    function safeGetItem(key, defaultValue) {
+      try {
+        const item = localStorage.getItem(key);
+        return item ? JSON.parse(item) : defaultValue;
+      } catch (e) {
+        console.warn('localStorage getItem error:', e);
+        return defaultValue;
+      }
+    }
+
+    function safeSetItem(key, value) {
+      try {
+        localStorage.setItem(key, JSON.stringify(value));
+        return true;
+      } catch (e) {
+        console.warn('localStorage setItem error:', e);
+        return false;
+      }
+    }
+
+    // Load or initialize deck
+    function getDeck() {
+      return safeGetItem('fredu_deck', []);
+    }
+
+    function saveDeck(deck) {
+      safeSetItem('fredu_deck', deck);
+      updateReviewBadge();
+      renderDeckList();
+    }
+
+    // Date formatting helper YYYY-MM-DD
+    function getTodayString() {
+      const d = new Date();
+      return formatDate(d);
+    }
+
+    function formatDate(d) {
+      const year = d.getFullYear();
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    }
+
+    function addDaysToDate(dateStr, days) {
+      const d = new Date(dateStr);
+      d.setDate(d.getDate() + days);
+      return formatDate(d);
+    }
+
+    // Text normalization for accent-insensitive comparisons
+    function normalizeText(text) {
+      if (!text) return '';
+      return text.trim().toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '');
+    }
+
+    // Toast notification
+    function showToast(msg) {
+      const toast = document.getElementById('toast');
+      toast.textContent = msg;
+      toast.classList.add('show');
+      setTimeout(() => {
+        toast.classList.remove('show');
+      }, 2500);
+    }
+
+    // Web Speech API Voice Initialization
+    function initSpeechSynthesis() {
+      if (!('speechSynthesis' in window)) return;
+
+      const pickVoice = () => {
+        const voices = window.speechSynthesis.getVoices();
+        // Prefer French voice
+        speechVoice = voices.find(v => v.lang === 'fr-FR') ||
+                      voices.find(v => v.lang.startsWith('fr')) ||
+                      null;
+      };
+
+      pickVoice();
+      if (window.speechSynthesis.onvoiceschanged !== undefined) {
+        window.speechSynthesis.onvoiceschanged = pickVoice;
+      }
+    }
+
+    function updateSpeechSpeed(val) {
+      speechRate = parseFloat(val);
+      document.getElementById('speedValue').textContent = `${speechRate.toFixed(1)}x`;
+    }
+
+    function stopSpeech() {
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+      }
+      isPlayingFullStory = false;
+      clearSentenceHighlights();
+      document.getElementById('btnPlayStory').textContent = '▶️ Sma3 l-9issa kamla';
+    }
+
+    function clearSentenceHighlights() {
+      document.querySelectorAll('.sentence').forEach(el => el.classList.remove('active-speaking'));
+    }
+
+    function highlightSentence(idx) {
+      clearSentenceHighlights();
+      if (idx >= 0 && idx < sentenceSpans.length) {
+        sentenceSpans[idx].classList.add('active-speaking');
+        sentenceSpans[idx].scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
+    }
+
+    function speakSentence(text, idx, onComplete) {
+      if (!('speechSynthesis' in window)) {
+        showToast('Navigateur dyalek ma fihch s-sawt (Web Speech API)');
+        if (onComplete) onComplete();
+        return;
+      }
+
+      window.speechSynthesis.cancel();
+      highlightSentence(idx);
+
+      const utterance = new SpeechSynthesisUtterance(text);
+      if (speechVoice) utterance.voice = speechVoice;
+      utterance.lang = 'fr-FR';
+      utterance.rate = speechRate;
+
+      utterance.onend = () => {
+        if (onComplete) onComplete();
+      };
+
+      utterance.onerror = (e) => {
+        console.error('TTS error', e);
+        if (onComplete) onComplete();
+      };
+
+      window.speechSynthesis.speak(utterance);
+    }
+
+    function speakWord(word) {
+      if (!('speechSynthesis' in window)) return;
+      window.speechSynthesis.cancel();
+      const u = new SpeechSynthesisUtterance(word);
+      if (speechVoice) u.voice = speechVoice;
+      u.lang = 'fr-FR';
+      u.rate = speechRate;
+      window.speechSynthesis.speak(u);
+    }
+
+    function togglePlayStory() {
+      if (isPlayingFullStory) {
+        stopSpeech();
+        return;
+      }
+
+      if (!sentenceSpans || sentenceSpans.length === 0) return;
+
+      isPlayingFullStory = true;
+      document.getElementById('btnPlayStory').textContent = '⏸️ 7bes s-sawt';
+      currentSentenceIdx = 0;
+      playNextSentenceInStory();
+    }
+
+    function playNextSentenceInStory() {
+      if (!isPlayingFullStory) return;
+
+      if (currentSentenceIdx >= sentenceSpans.length) {
+        stopSpeech();
+        showToast('Kmmlti l-9issa kamla! 👏');
+        return;
+      }
+
+      const span = sentenceSpans[currentSentenceIdx];
+      const text = span.getAttribute('data-text');
+
+      speakSentence(text, currentSentenceIdx, () => {
+        if (isPlayingFullStory) {
+          currentSentenceIdx++;
+          // Small pause between sentences
+          setTimeout(playNextSentenceInStory, 250);
+        }
+      });
+    }
+
+    // Story Loading and Rendering
+    async function loadStories() {
+      try {
+        const resp = await fetch('data/stories.json');
+        if (!resp.ok) throw new Error('Network response not ok');
+        stories = await resp.json();
+      } catch (err) {
+        console.warn('Fetch stories failed, attempting fallback:', err);
+        // Fallback placeholder if offline without cache
+        stories = [];
+      }
+
+      // Read day from URL ?day=N
+      const params = new URLSearchParams(window.location.search);
+      const urlDay = parseInt(params.get('day'), 10);
+      if (!isNaN(urlDay) && urlDay >= 1 && urlDay <= 30) {
+        currentDay = urlDay;
+      } else {
+        currentDay = 1;
+      }
+
+      renderCurrentStory();
+      renderShadowing();
+      updateReviewBadge();
+      setupReviewTab();
+    }
+
+    function changeDay(delta) {
+      const newDay = currentDay + delta;
+      if (newDay >= 1 && newDay <= stories.length) {
+        currentDay = newDay;
+        // Update URL query param without reload
+        const newUrl = new URL(window.location);
+        newUrl.searchParams.set('day', currentDay);
+        window.history.pushState({}, '', newUrl);
+
+        stopSpeech();
+        renderCurrentStory();
+        renderShadowing();
+      }
+    }
+
+    function renderCurrentStory() {
+      if (!stories || stories.length === 0) {
+        document.getElementById('storyTextContainer').textContent = 'Ma l9inach l-9isas. 3awed 7el l-app.';
+        return;
+      }
+
+      currentStory = stories.find(s => s.id === currentDay) || stories[0];
+
+      document.getElementById('storyIdBadge').textContent = `#${currentStory.id}`;
+      document.getElementById('dayLabel').textContent = `9issa ${currentStory.id} / ${stories.length}`;
+      document.getElementById('storyTopic').textContent = currentStory.topic;
+      document.getElementById('storyTitle').textContent = currentStory.title;
+
+      document.getElementById('btnPrevDay').disabled = (currentStory.id <= 1);
+      document.getElementById('btnNextDay').disabled = (currentStory.id >= stories.length);
+
+      // Build sentences and clickable glossary
+      renderStoryText(currentStory);
+    }
+
+    function renderStoryText(story) {
+      const container = document.getElementById('storyTextContainer');
+      container.innerHTML = '';
+
+      // Split story text into sentences cleanly
+      const rawSentences = story.text.match(/[^.!?]+[.!?]+/g) || [story.text];
+      sentenceSpans = [];
+
+      // Build glossary lookup map (normalized)
+      const glossaryMap = new Map();
+      (story.glossary || []).forEach(item => {
+        glossaryMap.set(normalizeText(item.word), item);
+        const withoutElision = item.word.replace(/^[ldl]['’]/i, '').trim();
+        if (withoutElision) {
+          glossaryMap.set(normalizeText(withoutElision), item);
+        }
+      });
+
+      rawSentences.forEach((rawSent, sIdx) => {
+        const sentTrim = rawSent.trim();
+        const sentSpan = document.createElement('span');
+        sentSpan.className = 'sentence';
+        sentSpan.setAttribute('data-idx', sIdx);
+        sentSpan.setAttribute('data-text', sentTrim);
+
+        // Parse sentence words and highlight glossary words
+        const words = sentTrim.split(/(\s+|[,;:.!?–—]+|[«»"'\(\)])/);
+        words.forEach(chunk => {
+          const normChunk = normalizeText(chunk);
+          if (glossaryMap.has(normChunk)) {
+            const glossaryItem = glossaryMap.get(normChunk);
+            const gSpan = document.createElement('span');
+            gSpan.className = 'glossary-word';
+            gSpan.textContent = chunk;
+            gSpan.onclick = (e) => {
+              e.stopPropagation();
+              openWordModal(glossaryItem.word, glossaryItem.darija, glossaryItem.example);
+            };
+            sentSpan.appendChild(gSpan);
+          } else if (chunk.trim().length > 1 && /^[a-zA-ZÀ-ÿ'’-]+$/.test(chunk.trim())) {
+            // Normal word: clickable to inspect or add
+            const wSpan = document.createElement('span');
+            wSpan.textContent = chunk;
+            wSpan.style.cursor = 'pointer';
+            wSpan.onclick = (e) => {
+              e.stopPropagation();
+              openWordModal(chunk.trim(), 'Ma kaynach f l-glossaire', '');
+            };
+            sentSpan.appendChild(wSpan);
+          } else {
+            sentSpan.appendChild(document.createTextNode(chunk));
+          }
+        });
+
+        // Click on sentence to read it
+        sentSpan.addEventListener('click', () => {
+          speakSentence(sentTrim, sIdx);
+        });
+
+        container.appendChild(sentSpan);
+        container.appendChild(document.createTextNode(' '));
+        sentenceSpans.push(sentSpan);
+      });
+    }
+
+    // Modal Word Popup
+    let modalCurrentWord = { word: '', darija: '', example: '' };
+
+    function openWordModal(word, darija, example) {
+      modalCurrentWord = { word, darija, example };
+      document.getElementById('modalWord').textContent = word;
+      document.getElementById('modalDarija').textContent = darija || 'Ma kaynach f l-glossaire';
+      document.getElementById('modalExample').textContent = example ? `« ${example} »` : 'Ma kynche mital';
+
+      // Check if already in deck
+      const deck = getDeck();
+      const inDeck = deck.some(i => normalizeText(i.word) === normalizeText(word));
+      const addBtn = document.getElementById('btnModalAddToReview');
+      if (inDeck) {
+        addBtn.textContent = '✅ Mwejoda f r-révision';
+        addBtn.disabled = true;
+      } else {
+        addBtn.textContent = '➕ Zid l-révision';
+        addBtn.disabled = false;
+      }
+
+      document.getElementById('wordModal').classList.add('open');
+    }
+
+    function closeWordModal(e) {
+      if (!e || e.target.id === 'wordModal' || e.target.classList.contains('modal-close')) {
+        document.getElementById('wordModal').classList.remove('open');
+      }
+    }
+
+    function speakModalWord() {
+      if (modalCurrentWord.word) {
+        speakWord(modalCurrentWord.word);
+      }
+    }
+
+    function addModalWordToReview() {
+      if (!modalCurrentWord.word) return;
+
+      const deck = getDeck();
+      if (!deck.some(i => normalizeText(i.word) === normalizeText(modalCurrentWord.word))) {
+        deck.push({
+          word: modalCurrentWord.word,
+          darija: modalCurrentWord.darija !== 'Ma kaynach f l-glossaire' ? modalCurrentWord.darija : '',
+          example: modalCurrentWord.example,
+          stage: 0,
+          due: addDaysToDate(getTodayString(), INTERVALS[0]),
+          mastered: false
+        });
+        saveDeck(deck);
+        showToast(`"${modalCurrentWord.word}" tzadte l-révision! (Due ghedda)`);
+      }
+      closeWordModal();
+    }
+
+    // Stories List Modal
+    function openStoriesModal() {
+      const container = document.getElementById('storiesListContainer');
+      container.innerHTML = '';
+
+      stories.forEach(s => {
+        const item = document.createElement('div');
+        item.className = `story-list-item ${s.id === currentDay ? 'active-item' : ''}`;
+        item.onclick = () => {
+          currentDay = s.id;
+          const newUrl = new URL(window.location);
+          newUrl.searchParams.set('day', currentDay);
+          window.history.pushState({}, '', newUrl);
+
+          stopSpeech();
+          renderCurrentStory();
+          renderShadowing();
+          closeStoriesModal();
+        };
+
+        item.innerHTML = `
+          <div>
+            <div style="font-weight:700; color:var(--text-main); font-size:0.95rem;">
+              ${s.id}. ${s.title}
+            </div>
+            <div style="font-size:0.75rem; color:var(--text-muted); text-transform:uppercase;">
+              ${s.topic}
+            </div>
+          </div>
+          <span style="color:var(--primary); font-size:0.85rem; font-weight:600;">9ra ▶</span>
+        `;
+        container.appendChild(item);
+      });
+
+      document.getElementById('storiesModal').classList.add('open');
+    }
+
+    function closeStoriesModal(e) {
+      if (!e || e.target.id === 'storiesModal' || e.target.classList.contains('modal-close')) {
+        document.getElementById('storiesModal').classList.remove('open');
+      }
+    }
+
+    // Shadowing Tab Logic (Audio Recording + Comparison)
+    let mediaRecorder = null;
+    let recordedAudioChunks = [];
+    let activeRecordingIndex = -1;
+    const recordedAudioMap = new Map(); // idx -> blob URL
+
+    function renderShadowing() {
+      const container = document.getElementById('shadowingContainer');
+      container.innerHTML = '';
+
+      if (!currentStory || !currentStory.shadowing) return;
+
+      currentStory.shadowing.forEach((sent, idx) => {
+        const item = document.createElement('div');
+        item.className = 'shadowing-item';
+        item.innerHTML = `
+          <div class="shadowing-num">Joumla ${idx + 1} / 5</div>
+          <div class="shadowing-sentence">${sent}</div>
+          <div class="shadowing-actions">
+            <button class="btn-action" onclick="speakWord('${sent.replace(/'/g, "\\'")}')">
+              🔊 Sma3 l-aṣli
+            </button>
+            <button id="btnRec-${idx}" class="btn-action btn-record" onclick="toggleRecordShadowing(${idx})">
+              🎙️ Sjel sawtek
+            </button>
+            <button id="btnPlayRec-${idx}" class="btn-action" style="display:none;" onclick="playMyRecording(${idx})">
+              ▶️ Tṣennat l-tsjil
+            </button>
+            <button class="btn-action" onclick="speakWord('${sent.replace(/'/g, "\\'")}')">
+              🔁 3awed l-aṣli
+            </button>
+          </div>
+          <div id="recStatus-${idx}" class="recording-status"></div>
+        `;
+        container.appendChild(item);
+      });
+    }
+
+    async function toggleRecordShadowing(idx) {
+      const recBtn = document.getElementById(`btnRec-${idx}`);
+      const statusLabel = document.getElementById(`recStatus-${idx}`);
+
+      // If currently recording this item, stop it
+      if (mediaRecorder && mediaRecorder.state === 'recording' && activeRecordingIndex === idx) {
+        mediaRecorder.stop();
+        recBtn.classList.remove('recording');
+        recBtn.textContent = '🎙️ 3awed sjel';
+        statusLabel.textContent = '✅ Tssjet! Wrek 3la "Tṣennat l-tsjil" bach t-9aren.';
+        return;
+      }
+
+      // If recording another item, stop first
+      if (mediaRecorder && mediaRecorder.state === 'recording') {
+        mediaRecorder.stop();
+      }
+
+      // Request microphone
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        mediaRecorder = new MediaRecorder(stream);
+        recordedAudioChunks = [];
+        activeRecordingIndex = idx;
+
+        mediaRecorder.ondataavailable = (e) => {
+          if (e.data.size > 0) {
+            recordedAudioChunks.push(e.data);
+          }
+        };
+
+        mediaRecorder.onstop = () => {
+          const blob = new Blob(recordedAudioChunks, { type: 'audio/webm' });
+          const audioUrl = URL.createObjectURL(blob);
+          recordedAudioMap.set(idx, audioUrl);
+
+          const playBtn = document.getElementById(`btnPlayRec-${idx}`);
+          if (playBtn) playBtn.style.display = 'inline-flex';
+
+          // Stop all audio tracks
+          stream.getTracks().forEach(track => track.stop());
+        };
+
+        mediaRecorder.start();
+        recBtn.classList.add('recording');
+        recBtn.textContent = '⏹️ 7bes t-tsjil';
+        statusLabel.textContent = '🔴 Kaytsjjel daba... hder m3a l-micro!';
+      } catch (err) {
+        console.error('Microphone access error:', err);
+        showToast('Khess t3ti l-permis dyal l-micro!');
+        statusLabel.textContent = '⚠️ Micro ma kheddamch aw ma 3titich l-permis.';
+      }
+    }
+
+    function playMyRecording(idx) {
+      const audioUrl = recordedAudioMap.get(idx);
+      if (!audioUrl) return;
+
+      const player = document.getElementById('recordedAudioPlayer');
+      player.src = audioUrl;
+      player.play();
+    }
+
+    // Spaced Repetition (Moraja3a / Flashcards)
+    let currentReviewDueList = [];
+    let currentReviewWord = null;
+
+    function updateReviewBadge() {
+      const deck = getDeck();
+      const today = getTodayString();
+      const dueCount = deck.filter(w => !w.mastered && w.due <= today).length;
+
+      document.getElementById('reviewCountText').textContent = `3ndek ${dueCount} kelmat t-raj3hom lyoum`;
+    }
+
+    function setupReviewTab() {
+      const deck = getDeck();
+      const today = getTodayString();
+      currentReviewDueList = deck.filter(w => !w.mastered && w.due <= today);
+
+      const cardView = document.getElementById('cardReviewView');
+      const emptyView = document.getElementById('emptyReviewView');
+
+      if (currentReviewDueList.length === 0) {
+        cardView.style.display = 'none';
+        emptyView.style.display = 'block';
+      } else {
+        cardView.style.display = 'block';
+        emptyView.style.display = 'none';
+        showNextReviewCard();
+      }
+
+      renderDeckList();
+    }
+
+    function showNextReviewCard() {
+      const flashcard = document.getElementById('flashcardBox');
+      flashcard.classList.remove('flipped');
+
+      if (currentReviewDueList.length === 0) {
+        setupReviewTab();
+        return;
+      }
+
+      currentReviewWord = currentReviewDueList[0];
+
+      document.getElementById('cardWordFront').textContent = currentReviewWord.word;
+      document.getElementById('cardStageFront').textContent = `Stage ${currentReviewWord.stage} / 4`;
+
+      document.getElementById('cardDarijaBack').textContent = currentReviewWord.darija || '—';
+      document.getElementById('cardExampleBack').textContent = currentReviewWord.example ? `« ${currentReviewWord.example} »` : '';
+      document.getElementById('cardStageBack').textContent = `Stage ${currentReviewWord.stage} / 4`;
+    }
+
+    function flipCard() {
+      document.getElementById('flashcardBox').classList.toggle('flipped');
+    }
+
+    function handleCardAnswer(isKnown) {
+      if (!currentReviewWord) return;
+
+      const deck = getDeck();
+      const wordObj = deck.find(w => normalizeText(w.word) === normalizeText(currentReviewWord.word));
+
+      if (wordObj) {
+        const today = getTodayString();
+        if (isKnown) {
+          // Advance stage
+          if (wordObj.stage >= 4) {
+            wordObj.stage = 5;
+            wordObj.mastered = true;
+            showToast(`"${wordObj.word}" t-masterat! Mabrouk! 🎓`);
+          } else {
+            wordObj.stage += 1;
+            wordObj.due = addDaysToDate(today, INTERVALS[wordObj.stage]);
+            showToast(`Stage ${wordObj.stage}! Due f ${INTERVALS[wordObj.stage]} yam.`);
+          }
+        } else {
+          // Reset to stage 0
+          wordObj.stage = 0;
+          wordObj.due = today;
+          showToast(`Rje3tiha l-Stage 0 bach t-3awedha.`);
+        }
+        saveDeck(deck);
+      }
+
+      // Remove from current session queue
+      currentReviewDueList.shift();
+      showNextReviewCard();
+      updateReviewBadge();
+    }
+
+    function renderDeckList() {
+      const deck = getDeck();
+      const container = document.getElementById('deckList');
+      container.innerHTML = '';
+
+      document.getElementById('totalDeckCount').textContent = `${deck.length} kelmat`;
+
+      if (deck.length === 0) {
+        container.innerHTML = '<div style="color:var(--text-muted); font-size:0.85rem; padding:8px;">Deck khawi. Zid kelmat men l-9isas!</div>';
+        return;
+      }
+
+      deck.forEach(item => {
+        const div = document.createElement('div');
+        div.className = 'deck-item';
+        const status = item.mastered ? '✅ Mastered' : `Stage ${item.stage} (Due: ${item.due})`;
+        div.innerHTML = `
+          <div>
+            <span class="deck-item-word">${item.word}</span>
+            <span class="deck-item-darija">${item.darija ? '(' + item.darija + ')' : ''}</span>
+          </div>
+          <span class="deck-item-badge">${status}</span>
+        `;
+        container.appendChild(div);
+      });
+    }
+
+    // Manual Add Word Form
+    function handleManualAddWord(e) {
+      e.preventDefault();
+      const wordInput = document.getElementById('inputFrenchWord');
+      const darijaInput = document.getElementById('inputDarijaMeaning');
+      const exampleInput = document.getElementById('inputExample');
+
+      const word = wordInput.value.trim();
+      const darija = darijaInput.value.trim();
+      const example = exampleInput.value.trim();
+
+      if (!word || !darija) return;
+
+      const deck = getDeck();
+      if (deck.some(i => normalizeText(i.word) === normalizeText(word))) {
+        showToast('Had l-kelma kayna deja f l-deck!');
+        return;
+      }
+
+      deck.push({
+        word: word,
+        darija: darija,
+        example: example,
+        stage: 0,
+        due: addDaysToDate(getTodayString(), INTERVALS[0]),
+        mastered: false
+      });
+
+      saveDeck(deck);
+      wordInput.value = '';
+      darijaInput.value = '';
+      exampleInput.value = '';
+
+      showToast(`Kelma "${word}" tzadte b naja7!`);
+      switchTab('review');
+    }
+
+    // Backup & Restore
+    function exportDataBackup() {
+      const data = {
+        version: 1,
+        exported_at: new Date().toISOString(),
+        deck: getDeck()
+      };
+
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `fredu-backup-${getTodayString()}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      showToast('L-khezin t-sauvegarda b naja7! 💾');
+    }
+
+    function importDataBackup(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const imported = JSON.parse(e.target.result);
+          if (imported && Array.isArray(imported.deck)) {
+            saveDeck(imported.deck);
+            showToast(`T-rejje3 ${imported.deck.length} kelmat b naja7! 📥`);
+            setupReviewTab();
+          } else {
+            showToast('Milaf machi sa7i7 (JSON format incorrect).');
+          }
+        } catch (err) {
+          console.error('Import error:', err);
+          showToast('Khata2 f 9rayat l-milaf.');
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    // Bottom Navigation Switcher
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+      document.querySelectorAll('.bottom-tab').forEach(b => b.classList.remove('active'));
+
+      const targetPanel = document.getElementById(`tab-${tabId}`);
+      if (targetPanel) targetPanel.classList.add('active');
+
+      if (tabId === 'story') document.getElementById('navTabStory').classList.add('active');
+      if (tabId === 'shadowing') document.getElementById('navTabShadowing').classList.add('active');
+      if (tabId === 'review') {
+        document.getElementById('navTabReview').classList.add('active');
+        setupReviewTab();
+      }
+      if (tabId === 'add') document.getElementById('navTabAdd').classList.add('active');
+
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    // Register Service Worker for Offline PWA Support
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js').catch(err => {
+          console.log('Service Worker registration skipped or failed:', err);
+        });
+      });
+    }
+
+    // Boot
+    window.addEventListener('DOMContentLoaded', () => {
+      initSpeechSynthesis();
+      loadStories();
+    });
+  </script>
+</body>
+</html>

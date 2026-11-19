@@ -1,0 +1,47 @@
+name: Daily Telegram French Lesson
+
+on:
+  schedule:
+    # Runs every day at 08:00 UTC
+    - cron: '0 8 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  daily-send:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Run unit tests
+        run: |
+          python -m unittest bot/test_send.py
+
+      - name: Send daily lesson
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          APP_URL: ${{ secrets.APP_URL }}
+        run: |
+          python bot/send.py
+
+      - name: Commit and push updated state
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          if ! git diff --quiet data/state.json; then
+            echo "State changed. Committing data/state.json..."
+            git add data/state.json
+            git commit -m "chore: update daily state [skip ci]"
+            git push
+          else
+            echo "No changes to data/state.json."
+          fi
