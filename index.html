@@ -906,7 +906,7 @@
             </span>
           </div>
           <div style="font-size:0.8rem; color:var(--text-muted);">
-            💡 <i>Wrek 3la ay joumla bach t-sma3ha bou7dha, w wrek 3la l-kelmat l-msettrin bach tchouf l-ma3na b Darija.</i>
+            💡 <i>Wrek 3la ay kelma, aw sélecti 2 aw 3 d l-kelmat mjmou3in bach t-kteb l-ma3na w t-zidhom l-révision!</i>
           </div>
         </div>
 
@@ -1490,6 +1490,9 @@
       renderStoryText(currentStory);
     }
 
+    let isTextSelecting = false;
+    let selectionTimeout = null;
+
     function renderStoryText(story) {
       const container = document.getElementById('storyTextContainer');
       container.innerHTML = '';
@@ -1526,6 +1529,9 @@
             gSpan.textContent = chunk;
             gSpan.onclick = (e) => {
               e.stopPropagation();
+              if (isTextSelecting) return;
+              const sel = window.getSelection();
+              if (sel && !sel.isCollapsed && sel.toString().trim().length > 1) return;
               openWordModal(glossaryItem.word, glossaryItem.darija, glossaryItem.example, sentTrim);
             };
             sentSpan.appendChild(gSpan);
@@ -1536,6 +1542,9 @@
             wSpan.style.cursor = 'pointer';
             wSpan.onclick = (e) => {
               e.stopPropagation();
+              if (isTextSelecting) return;
+              const sel = window.getSelection();
+              if (sel && !sel.isCollapsed && sel.toString().trim().length > 1) return;
               openWordModal(chunk.trim(), '', sentTrim, sentTrim);
             };
             sentSpan.appendChild(wSpan);
@@ -1545,7 +1554,10 @@
         });
 
         // Click on sentence to read it
-        sentSpan.addEventListener('click', () => {
+        sentSpan.addEventListener('click', (e) => {
+          if (isTextSelecting) return;
+          const sel = window.getSelection();
+          if (sel && !sel.isCollapsed && sel.toString().trim().length > 1) return;
           speakSentence(sentTrim, sIdx);
         });
 
@@ -1553,6 +1565,40 @@
         container.appendChild(document.createTextNode(' '));
         sentenceSpans.push(sentSpan);
       });
+
+      // Handle multi-word text selection across the story
+      function handleSelectionEnd() {
+        const sel = window.getSelection();
+        if (!sel || sel.isCollapsed) return;
+
+        const rawSel = sel.toString().trim();
+        // Clean leading/trailing punctuation and whitespace
+        const cleanSel = rawSel.replace(/^[\s,;:.!?«»"'()\[\]]+|[\s,;:.!?«»"'()\[\]]+$/g, '').trim();
+
+        // If at least 2 words or a meaningful multi-word phrase was selected
+        if (cleanSel.length > 1) {
+          isTextSelecting = true;
+          clearTimeout(selectionTimeout);
+          selectionTimeout = setTimeout(() => { isTextSelecting = false; }, 400);
+
+          let sentenceContext = '';
+          const anchor = sel.anchorNode;
+          if (anchor) {
+            const el = anchor.nodeType === Node.TEXT_NODE ? anchor.parentElement : anchor;
+            const sentEl = el ? el.closest('.sentence') : null;
+            if (sentEl) {
+              sentenceContext = sentEl.getAttribute('data-text') || '';
+            }
+          }
+
+          openWordModal(cleanSel, '', sentenceContext, sentenceContext);
+        }
+      }
+
+      container.onmouseup = handleSelectionEnd;
+      container.ontouchend = () => {
+        setTimeout(handleSelectionEnd, 60);
+      };
     }
 
     // Modal Word Popup & Inline Editor
@@ -1594,6 +1640,11 @@
     function closeWordModal(e) {
       if (!e || e.target.id === 'wordModal' || e.target.classList.contains('modal-close')) {
         document.getElementById('wordModal').classList.remove('open');
+        try {
+          if (window.getSelection) {
+            window.getSelection().removeAllRanges();
+          }
+        } catch (_) {}
       }
     }
 
